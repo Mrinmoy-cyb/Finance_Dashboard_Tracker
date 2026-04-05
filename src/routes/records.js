@@ -2,15 +2,27 @@ const router = require("express").Router();
 const prisma= require("../prisma");
 const auth= require("../middleware/auth");
 const authorize= require("../middleware/authorize");
+const recordSchema = require("../validation/record");
 
-router.post("/", auth, authorize(["ADMIN"]), async( req, res) => {
-    const record= await Prisma.financialRecord.create ({
-        data: {...req.body, userId: req.user.id }
+router.post("/", auth, authorize(["ADMIN"]), async (req, res) => {
+  const result = recordSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      error: result.error.errors
     });
-res.json(record);
+  }
+
+  const record = await prisma.financialRecord.create({
+    data: { ...result.data, userId: req.user.id }
+  });
+
+  res.json({ success: true, data: record });
 });
 
-router.get("/", auth, async (req, res) => {
+//Analyst + Admin can view
+router.get("/", auth, authorize(["ANALYST","ADMIN"]) ,async (req, res) => {
     const { type, category }= req.query;
 
     const records = await prisma.financialRecord.findMany({

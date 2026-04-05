@@ -1,5 +1,6 @@
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -11,7 +12,7 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      Role
+  role      String
   isActive  Boolean  @default(true)
   records   FinancialRecord[]
 }
@@ -21,14 +22,10 @@ model FinancialRecord {
   amount    Float
   type      String
   category  String
-  date      DateTime
+  date      DateTime @default(now())
   note      String?
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
 }
 
-enum Role {
-  VIEWER
-  ANALYST
-  ADMIN
-}
+
