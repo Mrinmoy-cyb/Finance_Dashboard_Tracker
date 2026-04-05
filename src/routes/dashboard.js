@@ -1,17 +1,16 @@
 const router = require("express").Router();
 const prisma= require("../prisma");
 const auth = require("../middleware/auth");
-const authorize= require("../middleware/authorize");
 
-router.get("/summary", auth ,authorize(["VIEWER", "ANALYST", "ADMIN"]) , async(req , res) =>{
+router.get("/summary", auth , async(req , res ) =>{
     const income= await prisma.financialRecord.aggregate({
         _sum: { amount : true },
-        where:{ type: "income" , userId: req.user.id }
+        where:{ type: "income" }
     });
 
     const expense= await prisma.financialRecord.aggregate({
         _sum :{ amount: true},
-        where :{type: "expense" ,  userId: req.user.id}
+        where :{type: "expense"}
     });
     res.json({
         totalIncome: income._sum.amount || 0,
@@ -20,20 +19,12 @@ router.get("/summary", auth ,authorize(["VIEWER", "ANALYST", "ADMIN"]) , async(r
     });
 });
 
-router.get("/category" , auth , authorize(["ANALYST", "ADMIN"]),  async( req , res )=> {
-    const data = await prisma.financialRecord. groupBy({
-        by :["category"], _sum: { amount : true }
+router.get("/category" , auth , async( req , res )=> {
+    const data = await prisma.financialRecord.groupBy({
+        by :["category"], 
+        _sum: { amount : true }
     });
-res.json(data);
-});
-
-router.get("/recent", auth, authorize(["ANALYST", "ADMIN", "VIEWER"]), async(req , res) => {
-    const data= await prisma.financialRecord.findMany({
-        take: 5,
-        orderBy: {date: desc }
-    });
-
-    res.json({success : true, data})
+    res.json(data);
 });
 
 module.exports = router;
